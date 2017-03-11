@@ -8,11 +8,11 @@
   (:gen-class))
 
 (defroutes app-routes
-  (GET "/" [] "Hello, world!")
+  (GET "/" [] "Hello,  world!")
   (route/not-found "Not Found"))
 
 (def app
-  (wrap-defaults app-routes site-defaults))
+  (wrap-defaults #'app-routes site-defaults))
 
 
 ;; Capture the result, which is a function used to stop the server.

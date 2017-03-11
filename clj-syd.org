@@ -29,6 +29,14 @@
    job of =compojure=
 
 
+** Reloading Code
+
+  [[file:src/my_compojure_app/handler.clj::#_%20(def%20server-stop-fn%20(http-server/run-server%20app%20{:port%209001}))][Demonstrate reloading here]]
+
+ (notes - show that instead of reloading server, you can 
+  just indirect the top route via the var.)
+
+
 ** middleware
 
  - a central idea behind this functional approach to handlers,
