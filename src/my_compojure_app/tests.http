@@ -1,0 +1,7 @@
+#  Hello, emacs!  This file is in    -*- restclient -*- mode!
+
+:host = http://localhost:9001
+
+
+#
+GET :host

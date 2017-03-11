@@ -1,0 +1,7 @@
+                                 -*- mode : restclient -*-
+
+:host=http://localhost:9001
+
+
+# The basic hello world.
+GET :host/

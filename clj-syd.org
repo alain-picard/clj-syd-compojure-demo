@@ -1,0 +1,100 @@
+#+TITLE:  Maintaining your =compojure=
+#+AUTHOR:    Alain Picard
+#+EMAIL:     alain@gocatch.com
+#+REVEAL_THEME: solarized
+#+REVEAL_TRANS: none
+#+REVEAL_EXTRA_CSS: prezzo.css
+#+OPTIONS: num:nil
+#+OPTIONS: org_reveal_title_slide:nil
+
+*   Maintaining your =compojure=
+
+    by
+
+#+REVEAL_HTML: <h3> Alain Picard </h3>
+
+
+
+* =compojure= --- a Ring^{(TM)} compatible routing library
+  :PROPERTIES:
+  :reveal_background: /tmp/logo.svg
+  :END:
+
+** =ring=
+
+ - basic idea is to view an HTTP request as a function
+   of an incoming map (the =request=) to an output map (the =response=)
+ - these functions are called =handlers=
+ - incoming requests are analyzed to choose a handler: this is the
+   job of =compojure=
+
+
+** middleware
+
+ - a central idea behind this functional approach to handlers,
+   requests and responses is the idea of a /middleware/; a function
+   which sits "in the middle" between the request and your handler to
+   modify the request map in some useful way before your handler gets
+   to use it.
+
+** toy example
+
+#+BEGIN_SRC clojure
+
+(defroutes app-routes
+  (GET "/" [] "Hello, world!")
+  (route/not-found "Not Found"))
+
+(def app
+  (wrap-defaults app-routes site-defaults))
+
+#+END_SRC
+
+   
+** This is all great, right?  /RIGHT?/
+
+
+* Problems
+
+** wrap-json
+
+#+ATTR_REVEAL: :frag (appear)
+  * you have a problem: non idempotent middlewares can be dangerous
+  * don't do that: make sure you only call middleware once
+  * now you have two problems
+
+** categorizing middlewares
+
+  * /before/  middlewares
+  * /after/ middlewares
+
+ Makes you think of Common Lisp's before/after methods...
+
+
+** /before/  middlewares
+
+  These want to run /before/ your handler to establish some
+  sort of context on which your application depends
+
+  - /e.g./ log (some part of) the request that your application is receiving
+  - /e.g./ perform authentication
+
+
+** /after/ middlewares
+
+  These want to run /after/ your handler to perform some
+  generic action common to every route in your application.
+
+  - /e.g./ log (some part of) the response that your application is serving
+  - /e.g./ transform the body of the response to JSON, if request had
+    a header of =Accept: application/json=
+
+
+#+REVEAL: split
+
+  More stuff on its own slide here.
+  
+
+
+
+
