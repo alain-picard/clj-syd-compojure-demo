@@ -5,3 +5,9 @@
 
 # The basic hello world.
 GET :host/
+
+
+
+# complex handler v 1.
+# and bar, baz
+GET :host/api/v1.0/foo
