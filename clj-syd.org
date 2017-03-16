@@ -64,6 +64,15 @@
 
 * Problems
 
+** Large scale development
+
+(notes:
+  slide-2 tag.
+  GET :host/api/v1.0/users
+  What happens if Sally adds a /users route?
+  Bob's route is masked.)
+
+
 ** wrap-json
 
 #+ATTR_REVEAL: :frag (appear)
