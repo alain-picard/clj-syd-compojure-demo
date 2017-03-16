@@ -4,6 +4,8 @@
 
 (ns my-compojure-app.module-a)
 (compojure.core/defroutes module-routes
+  ;; Sally adds this route
+  (compojure.core/GET "/users" [] (constantly {:status 200 :body "module  A Users"}))
   (compojure.core/GET "/foo" [] (constantly {:status 200 :body "module A"})))
 
 
@@ -16,4 +18,6 @@
 
 (ns my-compojure-app.module-c)
 (compojure.core/defroutes module-routes
+  ;; Charlie adds this route
+  (compojure.core/GET "/users" [] (constantly {:status 200 :body "module C Users"}))
   (compojure.core/GET "/baz" [] (constantly {:status 200 :body "module C"})))

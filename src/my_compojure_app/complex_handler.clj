@@ -13,9 +13,9 @@
 (defroutes app-routes
   (context "/api/v1.0" []
     (routes
-     a/module-routes
-     b/module-routes
-     c/module-routes))
+     (context "/a" [] a/module-routes)
+     (context "/b" [] b/module-routes)
+     (context "/c" [] c/module-routes)))
   (route/not-found "Not Found"))
 
 (def app (-> #'app-routes                       ; Note: make it reloadable!

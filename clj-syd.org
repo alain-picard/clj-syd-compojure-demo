@@ -72,6 +72,13 @@
   What happens if Sally adds a /users route?
   Bob's route is masked.)
 
+*** Fix it with contexts
+ (slide-3 tag)
+
+ - of course, now you've broken all your existing URLs
+ - so you had better think of all this stuff FIRST.
+ - your problems are over, now, right?
+
 
 ** wrap-json
 
