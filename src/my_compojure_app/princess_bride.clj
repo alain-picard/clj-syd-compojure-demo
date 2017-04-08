@@ -1,16 +1,18 @@
-(ns my-compojure-app.princess-bride)
-
+(ns my-compojure-app.princess-bride
+  (:require [hiccup.core :refer [html]]))
 
 (defn make-mw [quote]
-  (fn middleware-handler [h]
+  (fn middleware-handler [h role]
     (fn [request]
-      (h (update request :quotes conj quote)))))
+      (h (update request
+                 :quotes
+                 conj [role quote])))))
 
-(defn render-quotes-to-html [request]
-  (->> (:quotes request)
-       (map (fn render [quote]
-              [[:h1 "Quote"]
-               [:p quote]]))))
+ (defn render-quotes-in-request [request]
+  [:div
+   (for [[role quote] (:quotes request)]
+     [:div role " says: " [:strong quote] [:hr]])])
+
 
 (def inigo (make-mw "Hello.  My name is Inigo Montoya.  You killed my father.  Prepare to die."))
 

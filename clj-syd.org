@@ -14,6 +14,32 @@
 #+REVEAL_HTML: <h3> Alain Picard </h3>
 
 
+* Current ideas about talking points
+
+ - supposed to be composable (hence the name)
+ - but in practice things don't compose all that well
+ - if you don't know the full chain of middlewares being
+   applied, you can get nasty surprises
+   - e.g. non-idempotent middleware swallows your input
+   - e.g. middleware from other package prevents you from running
+
+ - seems to be no set of "best practices" documented anywhere
+ - only works well if you know your full set of URLs upfront
+   (and even then)
+ - I'd like to come up with some recommendations
+ - how do you debug this shit anyway?
+   - maybe show example of a logging middleware?
+   - show how to test this shit with ring-mock?
+
+
+** Recommendations
+
+ - put middlewares which can prevent
+   further routing as "low" as possible;
+   at the very least, /inside/ a context
+    *foo* =blah= /bar/ _under_  
+
+
 
 * =compojure= --- a Ring^{(TM)} compatible routing library
   :PROPERTIES:

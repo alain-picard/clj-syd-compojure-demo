@@ -10,4 +10,19 @@ GET :host/
 
 # complex handler v 1.
 # and bar, baz
-GET :host/api/v1.0/a/users
+GET :host/hello/there
+
+
+#
+POST :host/debug
+Content-Type: application/x-www-form-urlencoded
+foo=bar
+blah=ok
+
+
+#
+POST :host/register-user/bob/12345
+
+#
+GET :host/user/alain
+

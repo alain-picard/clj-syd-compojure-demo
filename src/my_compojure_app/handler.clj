@@ -4,15 +4,19 @@
             [compojure.route :as route]
 
             [org.httpkit.server :as http-server]
-            [ring.middleware.defaults :refer [wrap-defaults site-defaults]])
+            [ring.middleware.defaults :refer [wrap-defaults site-defaults]]
+            [my-compojure-app.example-routes :as example])
   (:gen-class))
 
-(defroutes app-routes
-  (GET "/" [] "Hello,  world!")
-  (route/not-found "Not Found"))
+
 
 (def app
-  (wrap-defaults #'app-routes site-defaults))
+  (wrap-defaults #'example/app-routes
+                 {:params    {:urlencoded true
+                              :multipart  true
+                              :nested     true
+                              :keywordize true}
+                  :cookies   true}))
 
 
 ;; Capture the result, which is a function used to stop the server.
