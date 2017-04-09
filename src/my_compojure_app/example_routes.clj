@@ -36,7 +36,7 @@
 
 (defroutes app-routes
   (GET "/hello/:foo"   [] "Hello,  world!") ; Oh darn.
-  (GET "/hello/there"   [] "Hello there,  world!"))
+  (GET "/hello/there"  [] "Hello there,  world!"))
 
 ;; You would never do that, right?
 
@@ -53,20 +53,39 @@
 
 (defn debugging-handler [request]
   {:status 200
-   :body   (select-keys request [:params :route-params :compojure/route :path-info :uri])})
+   :body   (with-out-str
+             (clojure.pprint/pprint
+              (select-keys request [:params :route-params :compojure/route :path-info :uri])))})
 
 (defroutes app-routes
   (POST "/debug" [] debugging-handler))
 
 
-;;;;  Handlers V. 2
+;;;;  Routes destructuring
 
 (defn register-user-handler [name mobile]
-  {:status 200
-   :body   (format "Name was %s and mobile was %s" name mobile)})
+  {:status 201
+   :body   (format "Name was \"%s\" and mobile was \"%s\" " name mobile)})
 
 (defroutes app-routes
+  ;; Destructuring the so called ":route-params"
   (POST "/register-user/:name/:mobile" [name mobile] (register-user-handler name mobile)))
+
+(defroutes app-routes
+  ;; Or you can destructuring the form params
+  (POST "/register-user" [name mobile] (register-user-handler name mobile)))
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -74,17 +93,28 @@
 
 ;;; Functions that sit "in the middle" between the web server and your handler
 
-;; An example "input handler"
+;; An example "input middleware"
 (fn [handler]
   (fn [request]
     (let [modified-request (munge-request request)]
       (handler modified-request))))
 
-;; An example "output handler"
+;; An example "output middleware"
 (fn [handler]
   (fn [request]
     (let [response (handler request)]
       (munge-response response))))
+
+;; Note that a middleware is nothing more than a function which creates a handler (fn).
+
+
+
+
+
+
+
+
+
 
 
 ;;;; Trivial middlewares
@@ -106,14 +136,19 @@
   (response (format "We got user %s" (:user request))))
 
 (defroutes app-routes
-  (GET "/user/:user-id" [user-id] (-> show-user-handler
-                                      find-user-middleware)))
+  (context "/blah" []
+    (GET "/user/:user-id" [user-id] (-> show-user-handler
+                                        find-user-middleware))))
+
+
+
+
 
 
 
 ;;;; Supplied middlewares:
-
-;;; More than you can shake a stick at
+;;;
+;;;  More than you can shake a stick at
 ;;;
 
 (defn wrap-defaults
@@ -148,8 +183,7 @@
 
 
 
-
-;; Example of a middleware in GoCatch
+;; Examples of a real world set of middleware wrappers at GoCatch
 
 (defn v2-routes-wrapper [routes]
   (-> routes
@@ -186,12 +220,95 @@
 
 
 
-;;;;  Are we confused yet?
+
+;;;;                        Are we confused yet?
 ;;;;
 ;;;;
-;;;;  it gets worse!!!  much worse!
+;;;;                     
+;;;;                         it gets worse!!!
 ;;;;
 ;;;;
+;;;;                     
+;;;;                         Back to routing 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+;;                    The all-important CONTEXT macro
+;;                    -------------------------------
+
+;; Remember this guy?
+(defroutes app-routes                   ; Are these correct?
+  module-a/some-routes                  ; Can you tell by looking at them?
+  module-b/some-other-routes            ; No?  Neither can I!
+  module-c/yet-more-routes)
+
+;; Best rewritten like this:
+(defroutes app-routes       
+  (context "/module-a" [] module-a/some-routes)      
+  (context "/module-b" [] module-b/some-other-routes)
+  (context "/module-c" [] module-c/yet-more-routes))
+
+
+
+ 
+
+
+
+
+;;
+;;         This solves the problem... at the cost of forcing you to have
+;;         complete up-front knowledge and final design of your entire URL space.
+;;
+;;
+;; BUT...
+;;         Does that sound like any app YOU've ever worked on???
+
+
+
+
+
+
+
+
+;; * Handlers can return NIL to "pass"
+
+
+;; * middlewares can fail to propagate (e.g. authentication)
+
+
+;; * 
+;; *
+;; *
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ;;;; The End
 (defroutes app-routes
