@@ -43,10 +43,11 @@
 
 ;;;; Composing routes in a larger app
 
-(defroutes app-routes                   ; Are these correct?
-  module-a/some-routes                  ; Can you tell by looking at them?
-  module-b/some-other-routes            ; No?  Neither can I!
-  module-c/yet-more-routes)
+(comment
+  (defroutes app-routes                 ; Are these correct?
+    module-a/some-routes                ; Can you tell by looking at them?
+    module-b/some-other-routes          ; No?  Neither can I!
+    module-c/yet-more-routes))
 
 
 ;;;;  Handlers
@@ -92,6 +93,7 @@
 ;;;; Interlude: Middlewares
 
 ;;; Functions that sit "in the middle" between the web server and your handler
+(declare munge-request munge-response)
 
 ;; An example "input middleware"
 (fn [handler]
@@ -136,86 +138,82 @@
   (response (format "We got user %s" (:user request))))
 
 (defroutes app-routes
-  (context "/blah" []
-    (GET "/user/:user-id" [user-id] (-> show-user-handler
-                                        find-user-middleware))))
-
-
-
-
-
+  (GET "/user/:user-id" [user-id] (-> show-user-handler
+                                      find-user-middleware)))
 
 
 ;;;; Supplied middlewares:
 ;;;
-;;;  More than you can shake a stick at
+;;; More than you can shake a stick at
 ;;;
 
-(defn wrap-defaults
-  "Wraps a handler in default Ring middleware, as specified by the supplied
+(comment
+ (defn wrap-defaults
+   "Wraps a handler in default Ring middleware, as specified by the supplied
   configuration map.
 
   See: api-defaults
        site-defaults
        secure-api-defaults
        secure-site-defaults"
-  [handler config]
-  (-> handler
-      (wrap wrap-anti-forgery     (get-in config [:security :anti-forgery] false))
-      (wrap wrap-flash            (get-in config [:session :flash] false))
-      (wrap wrap-session          (:session config false))
-      (wrap wrap-keyword-params   (get-in config [:params :keywordize] false))
-      (wrap wrap-nested-params    (get-in config [:params :nested] false))
-      (wrap wrap-multipart-params (get-in config [:params :multipart] false))
-      (wrap wrap-params           (get-in config [:params :urlencoded] false))
-      (wrap wrap-cookies          (get-in config [:cookies] false))
-      (wrap wrap-absolute-redirects (get-in config [:responses :absolute-redirects] false))
-      (wrap wrap-resource         (get-in config [:static :resources] false))
-      (wrap wrap-file             (get-in config [:static :files] false))
-      (wrap wrap-content-type     (get-in config [:responses :content-types] false))
-      (wrap wrap-default-charset  (get-in config [:responses :default-charset] false))
-      (wrap wrap-not-modified     (get-in config [:responses :not-modified-responses] false))
-      (wrap wrap-x-headers        (:security config))
-      (wrap wrap-hsts             (get-in config [:security :hsts] false))
-      (wrap wrap-ssl-redirect     (get-in config [:security :ssl-redirect] false))
-      (wrap wrap-forwarded-scheme      (boolean (:proxy config)))
-      (wrap wrap-forwarded-remote-addr (boolean (:proxy config)))))
+   [handler config]
+   (-> handler
+       (wrap wrap-anti-forgery     (get-in config [:security :anti-forgery] false))
+       (wrap wrap-flash            (get-in config [:session :flash] false))
+       (wrap wrap-session          (:session config false))
+       (wrap wrap-keyword-params   (get-in config [:params :keywordize] false))
+       (wrap wrap-nested-params    (get-in config [:params :nested] false))
+       (wrap wrap-multipart-params (get-in config [:params :multipart] false))
+       (wrap wrap-params           (get-in config [:params :urlencoded] false))
+       (wrap wrap-cookies          (get-in config [:cookies] false))
+       (wrap wrap-absolute-redirects (get-in config [:responses :absolute-redirects] false))
+       (wrap wrap-resource         (get-in config [:static :resources] false))
+       (wrap wrap-file             (get-in config [:static :files] false))
+       (wrap wrap-content-type     (get-in config [:responses :content-types] false))
+       (wrap wrap-default-charset  (get-in config [:responses :default-charset] false))
+       (wrap wrap-not-modified     (get-in config [:responses :not-modified-responses] false))
+       (wrap wrap-x-headers        (:security config))
+       (wrap wrap-hsts             (get-in config [:security :hsts] false))
+       (wrap wrap-ssl-redirect     (get-in config [:security :ssl-redirect] false))
+       (wrap wrap-forwarded-scheme      (boolean (:proxy config)))
+       (wrap wrap-forwarded-remote-addr (boolean (:proxy config))))))
 
 
 
 ;; Examples of a real world set of middleware wrappers at GoCatch
 
-(defn v2-routes-wrapper [routes]
-  (-> routes
-      (mw/wrap-request-logging :inside)
-      wrap-vehicle
+(comment
+ (defn v2-routes-wrapper [routes]
+   (-> routes
+       (mw/wrap-request-logging :inside)
+       wrap-vehicle
 
-      ;; IMPORTANT! Read carefully and understand!
-      ;; There is an implicit throw/catch protocol between the handlers,
-      ;; which call things like (redirect), (gone)  etc. and the standard-http-response
-      ;; handler.  However, things which add to the request "on the way out", like
-      ;; wrap-outstanding-messages and wrap-device-location won't run if they are
-      ;; inside that catch.  Make sure you don't add any middleware
-      ;; above here which wants to munge outgoing responses and which must succeed
-      ;; independent of the request!
-      mw/wrap-standard-http-response
+       ;; IMPORTANT! Read carefully and understand!
+       ;; There is an implicit throw/catch protocol between the handlers,
+       ;; which call things like (redirect), (gone)  etc. and the standard-http-response
+       ;; handler.  However, things which add to the request "on the way out", like
+       ;; wrap-outstanding-messages and wrap-device-location won't run if they are
+       ;; inside that catch.  Make sure you don't add any middleware
+       ;; above here which wants to munge outgoing responses and which must succeed
+       ;; independent of the request!
+       mw/wrap-standard-http-response
 
-      wrap-device-location              ; INBOUND - adds x-location
-      wrap-outstanding-messages         ; OUTBOUND - adds x-gocatch-messages -- needs auth to have run
+       wrap-device-location           ; INBOUND - adds x-location
+       wrap-outstanding-messages      ; OUTBOUND - adds x-gocatch-messages -- needs auth to have run
 
-      (mw/wrap-api-authentication :rest) ; INBOUND: adds :account-id (or bails)
-      (ring.middleware.json/wrap-json-body {:keywords? ->kebab-case-keyword}) ; INBOUND: decodes body into json map
-      wrap-multipart-params ; standard wrappers
-      wrap-nested-params
-      wrap-keyword-params
-      wrap-params
+       (mw/wrap-api-authentication :rest) ; INBOUND: adds :account-id (or bails)
+       (ring.middleware.json/wrap-json-body {:keywords? ->kebab-case-keyword}) ; INBOUND: decodes body into json map
+       wrap-multipart-params                                                   ; standard wrappers
+       wrap-nested-params
+       wrap-keyword-params
+       wrap-params
 
-      ;; "OUTBOUND" handlers
-      ;; These munge the outgoing repsonse with extra headers, etc.
-      wrap-json-response
-      wrap-not-modified
-      wrap-do-not-cache
-      (mw/wrap-request-logging :outside)))
+       ;; "OUTBOUND" handlers
+       ;; These munge the outgoing repsonse with extra headers, etc.
+       wrap-json-response
+       wrap-not-modified
+       wrap-do-not-cache
+       (mw/wrap-request-logging :outside))))
 
 
 
@@ -224,12 +222,12 @@
 ;;;;                        Are we confused yet?
 ;;;;
 ;;;;
-;;;;                     
+;;;;
 ;;;;                         it gets worse!!!
 ;;;;
 ;;;;
-;;;;                     
-;;;;                         Back to routing 
+;;;;
+;;;;                         Back to routing
 
 
 
@@ -252,20 +250,22 @@
 ;;                    -------------------------------
 
 ;; Remember this guy?
-(defroutes app-routes                   ; Are these correct?
-  module-a/some-routes                  ; Can you tell by looking at them?
-  module-b/some-other-routes            ; No?  Neither can I!
-  module-c/yet-more-routes)
+(comment
+ (defroutes app-routes                  ; Are these correct?
+   module-a/some-routes                 ; Can you tell by looking at them?
+   module-b/some-other-routes           ; No?  Neither can I!
+   module-c/yet-more-routes))
 
 ;; Best rewritten like this:
-(defroutes app-routes       
-  (context "/module-a" [] module-a/some-routes)      
-  (context "/module-b" [] module-b/some-other-routes)
-  (context "/module-c" [] module-c/yet-more-routes))
+(comment
+ (defroutes app-routes
+   (context "/module-a" [] module-a/some-routes)
+   (context "/module-b" [] module-b/some-other-routes)
+   (context "/module-c" [] module-c/yet-more-routes)))
 
 
 
- 
+
 
 
 
@@ -291,7 +291,7 @@
 ;; * middlewares can fail to propagate (e.g. authentication)
 
 
-;; * 
+;; *
 ;; *
 ;; *
 
