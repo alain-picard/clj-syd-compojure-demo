@@ -256,12 +256,34 @@
    module-b/some-other-routes           ; No?  Neither can I!
    module-c/yet-more-routes))
 
+
+
+
+
+
+
+
+
+
+
 ;; Best rewritten like this:
 (comment
  (defroutes app-routes
    (context "/module-a" [] module-a/some-routes)
    (context "/module-b" [] module-b/some-other-routes)
    (context "/module-c" [] module-c/yet-more-routes)))
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -287,10 +309,70 @@
 
 ;; * Handlers can return NIL to "pass"
 
+
+;; * Meddlesome Middlewares
 
-;; * middlewares can fail to propagate (e.g. authentication)
+(comment
+ (defroutes app-routes
+   (context "/context-a" [] (-> module-a/some-routes
+                                module-a/some-set-of-wrappers))
+   (context "/context-b" [] (-> module-b/more-routes
+                                module-b/another-of-wrappers)))
 
+ (def our-app
+   (-> app-routes
+       some-top-level-wrapper)))
 
+;;; Q:  Will some-top-level-wrapper interfere in some way
+;;;     with module-a/some-set-of-wrappers or module-b/another-of-wrappers ?
+;;;
+;;; A:  ??
+
+
+;; * Meddlesome Middlewares (continued)
+
+;;;   *  can fail to propagate (e.g. authentication)
+
+;;;   *  can fail to be idempotent (e.g. read-json-params)
+
+#_
+(defn wrap-json-body
+  "Middleware that parses the body of JSON request maps, and replaces the :body
+  key with the parsed data structure. Requests without a JSON content type are
+  unaffected.
+
+  Accepts the following options:
+
+  :keywords?          - true if the keys of maps should be turned into keywords
+  :bigdecimals?       - true if BigDecimals should be used instead of Doubles
+  :malformed-response - a response map to return when the JSON is malformed"
+  {:arglists '([handler] [handler options])}
+  [handler & [{:keys [keywords? bigdecimals? malformed-response]
+               :or {malformed-response default-malformed-response}}]]
+  (fn [request]
+    (if-let [[valid? json]
+             (read-json request {:keywords? keywords? :bigdecimals? bigdecimals?})]
+      ;;      ^^^^^^^^^
+      ;;      LOOK HERE
+      (if valid?
+        (handler (assoc request :body json))
+        malformed-response)
+      (handler request))))
+
+#_
+(defn- read-json [request & [{:keys [keywords? bigdecimals?]}]]
+  (if (json-request? request)
+    (if-let [body (:body request)]
+      (let [body-string (slurp body)]
+        ;;               ^^^^^^
+        ;;               blows up the 2nd time.
+        (binding [parse/*use-bigdecimals?* bigdecimals?]
+          (try
+            [true (json/parse-string body-string keywords?)]
+            (catch com.fasterxml.jackson.core.JsonParseException ex
+              [false nil])))))))
+
+
 ;; *
 ;; *
 ;; *
@@ -308,9 +390,11 @@
 
 
 
+;;;;                           The End
 
 
-;;;; The End
-(defroutes app-routes
-  (GET "/" [] "Goodbye,  world!")
-  (route/not-found "Not Found"))
+
+
+
+(defroutes end-routes
+  (route/not-found "Stairway to Heaven"))
