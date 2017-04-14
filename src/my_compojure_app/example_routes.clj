@@ -1,6 +1,7 @@
 (ns my-compojure-app.example-routes
   (:use [ring.middleware defaults params multipart-params keyword-params nested-params json])
   (:require [compojure.core :refer :all]
+            [clojure.pprint :refer [cl-format]]
             [compojure.route :as route]
             [ring.util.response :refer [response]]
             [hiccup.core :refer [html]]
@@ -9,11 +10,116 @@
 
 
 
-;;;; The Simplest Example
+;;;;  Handlers
 
-(defroutes app-routes
-  (GET "/" [] "Hello,  world!")
+(defn some-handler
+  [request]                             ; I take in a map
+  {:status 200                          ; I return a map
+   :body "Some html or somethin.  Capiche?"})
+
+;;; This is the "ring" model.
+;;;
+;;; ring provides some utilities, so above can be written as:
+
+(defn some-handler [request]
+  (response "Some html or somethin.  Capiche?"))
+
+;; other utilities provided are created, not-found, redirect  etc.
+
+
+;;;; OK the, what's a request?
+
+        {:cookies {},
+         :remote-addr "127.0.0.1",
+         :params {:foo "bar\nblah=ok\n\n"},
+         :route-params {},
+         :headers {"accept" "*/*",
+                   "accept-charset" "utf-8;q=1, x-ctext;q=0.5",
+                   "connection" "keep-alive",
+                   "content-length" "17",
+                   "content-type" "application/x-www-form-urlencoded",
+                   "extension" "Security/Digest Security/SSL",
+                   "host" "localhost:9001",
+                   "mime-version" "1.0"},
+         ;; Commented out so this stuff compiles
+         ;; :async-channel #object[org.httpkit.server.AsyncChannel 0x6c082fe3 "/127.0.0.1:9001<->/127.0.0.1:39988"],
+         ;; :body #object[org.httpkit.BytesInputStream 0x6e9ca27f "BytesInputStream[len=17]"],
+         :server-port 9001,
+         :content-length 17,
+         :form-params {"foo" "bar\nblah=ok\n\n"},
+         :compojure/route [:post "/debug"],
+         :websocket? false,
+         :query-params {},
+         :content-type "application/x-www-form-urlencoded",
+         :character-encoding "utf8",
+         :uri "/debug",
+         :server-name "localhost",
+         :query-string nil,
+         :multipart-params {},
+         :scheme :http,
+         :request-method :post}
+
+
+
+
+;;;;   What's a route?
+
+
+;; A route is nothing more (and nothing less) than a handler
+;; which provides an association between a [method/uri] pair
+;; and another handler
+
+;; e.g.
+
+(comment
+ (fn [request]
+   (when (and (matches-some-method (:request-method request))
+              (matches-some-uri    (:uri request)))
+     (some-handler request))))
+
+
+
+
+;;;;   How do I make them?
+
+
+
+(GET "/rhythm" [] "I got rhythm.")
+
+(POST "/man" [mail] "I always ring twice")
+
+;;; Similar for  PUT, PATCH, DELETE, HEAD, OPTIONS
+
+;;; And a catch all
+
+(ANY "/thing" [] "goes.")
+
+
+
+
+;;;; How do they compose?
+
+
+
+(defroutes app-routes                   ; This makes one route out of many
+  (GET "/" [] "Hello, Hacker!")
   (route/not-found "Not Found"))
+
+;;;  Interlude - a nice way of testing all this stuff:
+;;;  let's look at  tests.http
+
+;;;   Unfortunately, this is where we're about
+;;;   to lose our compojure...
+
+
+
+
+
+
+
+
+
+
 
 
 ;;;; Order doesn't matter
@@ -35,7 +141,9 @@
 ;;;; Or does it?
 
 (defroutes app-routes
-  (GET "/hello/:foo"   [] "Hello,  world!") ; Oh darn.
+  (GET "/hello/:bar"   [] (do (println "Whoa!  A no op route!")
+                              nil))
+  (GET "/hello/:foo"   [] "Oh, foo it!")
   (GET "/hello/there"  [] "Hello there,  world!"))
 
 ;; You would never do that, right?
@@ -48,6 +156,14 @@
     module-a/some-routes                ; Can you tell by looking at them?
     module-b/some-other-routes          ; No?  Neither can I!
     module-c/yet-more-routes))
+
+
+
+
+
+
+
+
 
 
 ;;;;  Handlers
@@ -120,12 +236,11 @@
 
 
 ;;;; Trivial middlewares
-
 (def *users*
-  {"tiger" {:user "Tiger Woods" :age 41 :interests ["Golf" "Women"]}
-   "shane" {:user "Shane Warne" :age 46 :interests ["Cricket" "Beer"]}
-   "alain" {:user "Alain Picard" :age "None of your business"
-            :interests ["Clojure" "Lisp" "Scotch Whisky"]}})
+  {"tiger" {:name "Tiger Woods" :age 41 :interests #{"Golf" "Women"}}
+   "shane" {:name "Shane Warne" :age 46 :interests #{"Cricket" "Beer"}}
+   "alain" {:name "Alain Picard" :age "None of your business"
+            :interests #{"Clojure" "Lisp" "Scotch Whisky"}}})
 
 (def find-user-middleware
   (fn [handler]
@@ -134,8 +249,12 @@
             user    (get *users* user-id "No such user")]
         (handler (assoc request :user user))))))
 
-(defn show-user-handler [request]
-  (response (format "We got user %s" (:user request))))
+(defn show-user-handler [{user :user}]
+  (response
+   (cl-format nil
+              "We got user ~A, and he ~:[is not~;most certainly is~] a clojure programmer!"
+              (:name user)
+              (contains? (:interests user) "Clojure"))))
 
 (defroutes app-routes
   (GET "/user/:user-id" [user-id] (-> show-user-handler
@@ -220,14 +339,14 @@
 
 
 ;;;;                        Are we confused yet?
-;;;;
-;;;;
-;;;;
-;;;;                         it gets worse!!!
-;;;;
-;;;;
-;;;;
-;;;;                         Back to routing
+;;;
+;;;
+;;;
+;;;                         it gets worse!!!
+;;;
+;;;
+;;;
+;;;                         Back to routing
 
 
 
@@ -306,10 +425,6 @@
 
 
 
-
-;; * Handlers can return NIL to "pass"
-
-
 ;; * Meddlesome Middlewares
 
 (comment
@@ -372,29 +487,16 @@
             (catch com.fasterxml.jackson.core.JsonParseException ex
               [false nil])))))))
 
-
-;; *
-;; *
-;; *
-
-
-
-
-
-
-
-
 
 
 
 
 
 
-;;;;                           The End
+;;;;                           Thank You!
 
 
 
 
-
-(defroutes end-routes
-  (route/not-found "Stairway to Heaven"))
+        (defroutes end-of-the-routes
+          (route/not-found "Stairway to Heaven"))

@@ -7,9 +7,13 @@
 GET :host/
 
 
+#
+GET :host/hello
 
-# complex handler v 1.
-# and bar, baz
+#
+GET :host/goodbye
+
+#
 GET :host/hello/there
 
 
@@ -29,5 +33,5 @@ Content-Type: application/x-www-form-urlencoded
 name=bob&mobile=888222
 #
 #
-GET :host/user/alain
+GET :host/user/tiger
 
