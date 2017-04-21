@@ -6,7 +6,6 @@
 # The basic hello world.
 GET :host/
 
-
 #
 GET :host/hello
 
@@ -30,8 +29,7 @@ POST :host/register-user/bob/12345
 #
 POST :host/register-user
 Content-Type: application/x-www-form-urlencoded
-name=bob&mobile=888222
+name=bob&mobile=888222&id=1
 #
 #
-GET :host/user/tiger
-
+GET :host/user/alain

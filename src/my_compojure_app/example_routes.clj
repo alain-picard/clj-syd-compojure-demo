@@ -3,11 +3,11 @@
   (:require [compojure.core :refer :all]
             [clojure.pprint :refer [cl-format]]
             [compojure.route :as route]
-            [ring.util.response :refer [response]]
+            [ring.util.response :refer [response header]]
             [hiccup.core :refer [html]]
             [org.httpkit.server :as http-server]
+            [ring.mock.request]
             [ring.middleware.defaults :refer [wrap-defaults site-defaults]]))
-
 
 
 ;;;;  Handlers
@@ -59,6 +59,11 @@
          :scheme :http,
          :request-method :post}
 
+
+
+
+
+
 
 
 
@@ -83,7 +88,6 @@
 ;;;;   How do I make them?
 
 
-
 (GET "/rhythm" [] "I got rhythm.")
 
 (POST "/man" [mail] "I always ring twice")
@@ -96,21 +100,87 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+;;;; Digression --- testing strategy number 1
+
+(ring.mock.request/request :get "/rhythm")
+
+
+;;;  So we can test a handler (or a route) just by calling it
+
+
+((GET "/rhythm" [] "I got rhythm.")
+ (ring.mock.request/request :get "/rhythm"))
+
+
+
+;;;  testing strategy number 1 (continued)
+
+
+;; We might need more complicated requests;
+
+(-> (ring.mock.request/request :get "/some/uri")
+    (header "Accept" "application/json"))
+
+
+(def a-post-request
+  (ring.mock.request/request :post "/some/uri"
+                             {:number 10 :name "Guy Lafleur"})) ; Simulate some post data
+
+#_
+(slurp (:body a-post-request))
+
+
+(def a-BROKEN-json-encoded-post-request  ; DON'T DO THIS!!
+  (-> (ring.mock.request/request :post "/some/uri"
+                                 {:number 10 :name "Guy Lafleur"}) ; Simulate some post data
+      (header "Content-Type" "application/json")))
+
+#_
+(slurp (:body a-BROKEN-json-encoded-post-request))
+
+
+(def a-working-json-encoded-post-request
+  (-> (ring.mock.request/request :post "/some/uri"
+                                 (cheshire.core/encode
+                                  {:number 10 :name "Guy Lafleur"})) ; Simulate some post data
+      (header "Content-Type" "application/json")))
+
+#_
+(slurp (:body a-working-json-encoded-post-request))
+
+#_
+(cheshire.core/decode (slurp (:body a-working-json-encoded-post-request)))
+
 
 ;;;; How do they compose?
 
 
-
 (defroutes app-routes                   ; This makes one route out of many
   (GET "/" [] "Hello, Hacker!")
-  (route/not-found "Not Found"))
+  (route/not-found "For there is nothing lost, that may be found, if sought."))
 
-;;;  Interlude - a nice way of testing all this stuff:
-;;;  let's look at  tests.http
 
-;;;   Unfortunately, this is where we're about
-;;;   to lose our compojure...
+;;;  Unfortunately, this is where we're about
+;;;  to lose our compojure...
 
+
+
+;;;  But let's first look at a more interactive testing strategy
 
 
 
@@ -177,6 +247,22 @@
 (defroutes app-routes
   (POST "/debug" [] debugging-handler))
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ;;;;  Routes destructuring
 
@@ -184,16 +270,23 @@
   {:status 201
    :body   (format "Name was \"%s\" and mobile was \"%s\" " name mobile)})
 
+
 (defroutes app-routes
   ;; Destructuring the so called ":route-params"
+  ;;
+  ;;  NOTE: this destructuring ONLY works because of the WRAP-PARAMS middleware
   (POST "/register-user/:name/:mobile" [name mobile] (register-user-handler name mobile)))
+
 
 (defroutes app-routes
   ;; Or you can destructuring the form params
   (POST "/register-user" [name mobile] (register-user-handler name mobile)))
 
 
-
+(defroutes app-routes
+  ;; And you can provide "converter" functions for your parameters
+  (POST "/register-user" [name
+                          id :<< #(Long. %)] {:status 200 :body (str "Sum is "(+ id 42))}))
 
 
 

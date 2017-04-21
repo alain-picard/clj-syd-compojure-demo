@@ -7,6 +7,5 @@
                  [compojure "1.5.1"]
                  [http-kit "2.2.0"]
                  [ring/ring-defaults "0.2.1"]
-                 [ring/ring-json "0.4.0"]]
-  :profiles
-  {:dev {:dependencies [[ring/ring-mock "0.3.0"]]}})
+                 [ring/ring-json "0.4.0"]
+                 [ring/ring-mock "0.3.0"]])
