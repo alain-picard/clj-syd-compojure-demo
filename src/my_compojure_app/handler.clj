@@ -23,3 +23,10 @@
 #_  (def server-stop-fn (http-server/run-server app {:port 9001}))
 
 #_  (server-stop-fn)
+
+
+(defn -main []
+  ;; Purists tell you to not do this.  :-)
+  (def server-stop-fn
+    "The callback allowing us to shut this thing off, if need be."
+    (http-server/run-server app {:port 9001})))

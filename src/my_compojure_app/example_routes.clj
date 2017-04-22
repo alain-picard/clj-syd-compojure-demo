@@ -1,13 +1,30 @@
 (ns my-compojure-app.example-routes
-  (:use [ring.middleware defaults params multipart-params keyword-params nested-params json])
-  (:require [compojure.core :refer :all]
-            [clojure.pprint :refer [cl-format]]
-            [compojure.route :as route]
-            [ring.util.response :refer [response header]]
-            [hiccup.core :refer [html]]
-            [org.httpkit.server :as http-server]
-            [ring.mock.request]
-            [ring.middleware.defaults :refer [wrap-defaults site-defaults]]))
+
+  "An example namespace used to demonstrate some of the
+   good (and bad) points of compojure to the Sydney Clojure User's group."
+
+  (:require
+   ;; Don't worry about these...
+   [clojure.pprint :refer [cl-format]]
+   [org.httpkit.server :as http-server]
+   [hiccup.core :refer [html]]
+   [ring.mock.request]
+   [ring.middleware.defaults :refer [wrap-defaults site-defaults]]
+
+   ;; pay attention to these!
+   [compojure.core :refer [GET POST ANY defroutes routes]]
+   [compojure.route :as route :refer [not-found resources files]]
+   [ring.util.response :refer [response header]]))
+
+
+
+
+
+
+
+
+
+
 
 
 ;;;;  Handlers
