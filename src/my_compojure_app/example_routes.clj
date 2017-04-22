@@ -25,7 +25,6 @@
 
 
 
-
 
 ;;;;  Handlers
 
@@ -42,6 +41,17 @@
   (response "Some html or somethin.  Capiche?"))
 
 ;; other utilities provided are created, not-found, redirect  etc.
+
+
+
+
+
+
+
+
+
+
+
 
 
 ;;;; OK the, what's a request?
@@ -105,11 +115,15 @@
 ;;;;   How do I make them?
 
 
-(GET "/rhythm" [] "I got rhythm.")
+(GET "/rhythm" [] "I got rhythm, and I don't want anything more.")
 
-(POST "/man" [mail] "I always ring twice")
+
+(POST "/MAN" [] "Always rings twice.")
+
 
 ;;; Similar for  PUT, PATCH, DELETE, HEAD, OPTIONS
+;;; You can add your own missing verbs easily, if desired
+
 
 ;;; And a catch all
 
@@ -145,7 +159,7 @@
 
 
 
-;;;  testing strategy number 1 (continued)
+;;;;      testing strategy number 1 (continued)
 
 
 ;; We might need more complicated requests;
@@ -192,14 +206,14 @@
   (route/not-found "For there is nothing lost, that may be found, if sought."))
 
 
+
 ;;;  Unfortunately, this is where we're about
 ;;;  to lose our compojure...
+;;;  But before we do, let's first look at a more interactive testing strategy
 
 
-
-;;;  But let's first look at a more interactive testing strategy
-
-
+(defroutes app-routes
+  (route/not-found "For there is nothing lost, that may be found, if sought."))
 
 
 
@@ -228,12 +242,43 @@
 ;;;; Or does it?
 
 (defroutes app-routes
+  (GET "/hello/:foo"   [] "Oh, foo it!")
+  (GET "/hello/there"  [] "Hello there,  world!"))
+
+
+
+
+
+;;    You would never do that, right?
+
+
+
+
+
+
+
+
+
+;;;;     Beware the evil no-op handler
+
+(defroutes app-routes
   (GET "/hello/:bar"   [] (do (println "Whoa!  A no op route!")
                               nil))
+
   (GET "/hello/:foo"   [] "Oh, foo it!")
   (GET "/hello/there"  [] "Hello there,  world!"))
 
 ;; You would never do that, right?
+
+
+
+
+
+
+
+
+
+
 
 
 ;;;; Composing routes in a larger app
@@ -409,8 +454,9 @@
 
 
 
-;; Examples of a real world set of middleware wrappers at GoCatch
+;;;;      Examples of a real world set of middleware wrappers at GoCatch
 
+;; Don't laugh.  It's not funny.
 (comment
  (defn v2-routes-wrapper [routes]
    (-> routes
@@ -475,7 +521,7 @@
 
 
 
-;;                    The all-important CONTEXT macro
+;;;;                    The all-important CONTEXT macro
 ;;                    -------------------------------
 
 ;; Remember this guy?
@@ -495,7 +541,9 @@
 
 
 
-;; Best rewritten like this:
+;;;;    Best rewritten like this:
+
+
 (comment
  (defroutes app-routes
    (context "/module-a" [] module-a/some-routes)
@@ -517,10 +565,9 @@
 
 
 
-
-
-
-
+;;;;
+;;
+;;
 ;;
 ;;         This solves the problem... at the cost of forcing you to have
 ;;         complete up-front knowledge and final design of your entire URL space.
@@ -535,7 +582,7 @@
 
 
 
-;; * Meddlesome Middlewares
+;;;;      Meddlesome Middlewares
 
 (comment
  (defroutes app-routes
@@ -553,12 +600,20 @@
 ;;;
 ;;; A:  ??
 
+
+
+
+
+
 
-;; * Meddlesome Middlewares (continued)
+;;;; * Meddlesome Middlewares (continued)
 
 ;;;   *  can fail to propagate (e.g. authentication)
 
-;;;   *  can fail to be idempotent (e.g. read-json-params)
+;;;   *  can fail to be idempotent (e.g. wrap-json-XXX)
+
+ring.middleware.json/wrap-json-body
+
 
 #_
 (defn wrap-json-body

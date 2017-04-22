@@ -27,3 +27,5 @@
 (define-key clojure-mode-map (kbd "<f5>") 'prev-hidden-page)
 (define-key clojure-mode-map (kbd "<f6>") 'next-hidden-page)
 (global-set-key (kbd "<f7>") 'ap-toggle-prezzo)
+
+(set-face-background (quote hl-line) "firebrick")
